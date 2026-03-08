@@ -5,7 +5,7 @@ Production-ready Next.js application with **App Router**, **Supabase** (auth + d
 ## Stack
 
 - **Next.js 16** (App Router, React 19)
-- **Supabase** — Auth (email/password + OAuth) and PostgreSQL
+- **Supabase** — Auth (email/password) and PostgreSQL
 - **shadcn/ui** — Components and styling
 - **TypeScript**
 
@@ -40,13 +40,12 @@ Follow these steps to get the required environment keys and configure the projec
 2. Go to **Project Settings** (gear icon in the left sidebar) → **API**.
 3. Copy these two values:
 
-   | What you need | Where to find it |
-   |---------------|------------------|
-   | **Project URL** | **API** → **Project URL** (use as `NEXT_PUBLIC_SUPABASE_URL`) |
+   | What you need      | Where to find it                                                             |
+   | ------------------ | ---------------------------------------------------------------------------- |
+   | **Project URL**    | **API** → **Project URL** (use as `NEXT_PUBLIC_SUPABASE_URL`)                |
    | **Public API key** | **API Keys** tab (see below) → use as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 
    **Public API key:**
-
    - **Recommended:** **Publishable key** — format `sb_publishable_...`. In **API Keys**, copy the **Publishable key**; if you don’t see one, click **Create new API Keys** and copy the Publishable key. Set it as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
    - **Legacy:** **anon key** — JWT format (`eyJ...`). In **API Keys** → **Legacy API Keys**, copy the **anon** key and set it as `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
@@ -84,21 +83,11 @@ Replace with your actual **Project URL** and **Publishable key**. Do not use the
    - Your production URL, e.g. `https://your-vercel-domain.vercel.app/auth/callback`
 4. Click **Save**.
 
-### 5. (Optional) Enable OAuth providers (Google / GitHub)
+**Email verification:** After sign-up, users receive a confirmation email. Clicking the link goes to `/auth/callback` (which completes verification), then to `/auth/email-verified`. From there they use **Sign in to proceed** to sign in. Use the default **Confirm signup** email template in Supabase, or see `docs/supabase-email-templates.md` for customization.
 
-- **Google**  
-  1. **Authentication** → **Providers** → **Google** → Enable.  
-  2. Use a Google Cloud OAuth client (Web application).  
-  3. Add authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`.  
-  4. Paste Client ID and Client Secret into Supabase and Save.
+### 5. (Optional) OAuth (Google / GitHub)
 
-- **GitHub**  
-  1. **Authentication** → **Providers** → **GitHub** → Enable.  
-  2. In GitHub: Settings → Developer settings → OAuth Apps → New.  
-  3. Authorization callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`.  
-  4. Paste Client ID and Secret into Supabase and Save.
-
-Replace `<project-ref>` with your project reference (from the Supabase project URL).
+The app currently uses **email/password only**. OAuth is not implemented in the UI. To add it later, enable the provider in **Authentication** → **Providers** in Supabase and implement the sign-in flow in the app.
 
 ### 6. (Optional) Seed demo data
 
@@ -112,9 +101,9 @@ Replace `<project-ref>` with your project reference (from the Supabase project U
 
 ## Environment variables summary
 
-| Variable | Where to get it | Required |
-|----------|------------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → API → **Project URL** | Yes |
+| Variable                               | Where to get it                                             | Required                                                          |
+| -------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Project Settings → API → **Project URL**                    | Yes                                                               |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Project Settings → API → **API Keys** → **Publishable key** | Yes (or use `NEXT_PUBLIC_SUPABASE_ANON_KEY` with legacy anon key) |
 
 - **Publishable key** (`sb_publishable_...`) — recommended; set as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
@@ -136,11 +125,11 @@ Use `.env.local` locally. On Vercel, set these in **Project → Settings → Env
 
 ## Roles and routes
 
-- **Unauthenticated**: `/`, `/auth/sign-in`, `/auth/sign-up`.  
-- **Authenticated (user)**: `/dashboard` — view all items, create and edit/delete own.  
+- **Unauthenticated**: `/`, `/auth/sign-in`, `/auth/sign-up`, `/auth/email-verified` (success page after clicking the sign-up confirmation link).
+- **Authenticated (user)**: `/dashboard` — view all items, create and edit/delete own.
 - **Admin**: `/admin` — full CRUD on all items; link shown in nav when `profile.role === 'admin'`.
 
-Protected routes are enforced in middleware (redirect to sign-in) and in layout/server code (role checks for `/admin`).
+Flow: sign up → confirm email (link in email) → redirected to `/auth/email-verified` → **Sign in to proceed** → dashboard. Protected routes are enforced in middleware (redirect to sign-in) and in layout/server code (role checks for `/admin`).
 
 ---
 
