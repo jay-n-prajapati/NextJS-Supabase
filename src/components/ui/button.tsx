@@ -2,6 +2,7 @@
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -42,18 +43,59 @@ const buttonVariants = cva(
   }
 )
 
+type IconPosition = "start" | "end"
+
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    loading?: boolean
+    loadingText?: string
+    icon?: React.ReactNode
+    iconPosition?: IconPosition
+  }
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading,
+  loadingText,
+  icon,
+  iconPosition = "start",
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
+  const isDisabled = Boolean(disabled || loading)
+  const showStartIcon = loading || (icon && iconPosition !== "end")
+  const showEndIcon = !loading && icon && iconPosition === "end"
+  const label = loading && loadingText ? loadingText : children
+
   return (
     <ButtonPrimitive
       data-slot="button"
+      data-icon={
+        showStartIcon ? "inline-start" : showEndIcon ? "inline-end" : undefined
+      }
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={isDisabled}
       {...props}
-    />
+    >
+      {showStartIcon && (
+        <span data-icon="inline-start" className="inline-flex items-center">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            icon
+          )}
+        </span>
+      )}
+      {label}
+      {showEndIcon && (
+        <span data-icon="inline-end" className="inline-flex items-center">
+          {icon}
+        </span>
+      )}
+    </ButtonPrimitive>
   )
 }
 

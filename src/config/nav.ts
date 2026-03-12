@@ -1,4 +1,4 @@
-import type { Role } from "@/types/database";
+import type { Role } from "@/constants/roles";
 import {
   LayoutDashboard,
   Shield,

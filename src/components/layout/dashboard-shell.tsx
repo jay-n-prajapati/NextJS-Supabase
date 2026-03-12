@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "@/app/auth/actions";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ContentContainer } from "@/components/shared/content-container";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { LayoutBreadcrumbs } from "@/components/layout/breadcrumbs";
 import { useSidebar } from "@/hooks/use-sidebar";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ export function DashboardShell({ user, profile, children }: DashboardShellProps)
   const initial = (profile?.full_name || user.email || "U").slice(0, 1).toUpperCase();
   const role = (profile?.role ?? "user") as "admin" | "user";
   const { collapsed, toggle } = useSidebar();
+  const { signOut } = useAuth();
 
   return (
     <div className="flex h-screen min-h-0 w-full overflow-hidden">
@@ -56,11 +57,12 @@ export function DashboardShell({ user, profile, children }: DashboardShellProps)
                 <DropdownMenuItem>
                   <Link href="/profile" className="block w-full">Profile</Link>
                 </DropdownMenuItem>
-                <form id="signout-form" action={signOut} className="hidden" />
                 <DropdownMenuItem>
                   <button
-                    type="submit"
-                    form="signout-form"
+                    type="button"
+                    onClick={() => {
+                      void signOut();
+                    }}
                     className="w-full cursor-pointer text-left"
                   >
                     Sign out

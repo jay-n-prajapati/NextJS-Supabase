@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Plus_Jakarta_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/shared/theme-provider";
+import { Providers } from "@/components/common/providers";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,7 +38,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${plusJakarta.variable} ${ibmPlexMono.variable} font-sans antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-          {children}
+          <Providers>
+            {children}
+            <Toaster richColors position="top-right" />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
