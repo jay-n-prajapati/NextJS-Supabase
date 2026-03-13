@@ -1,127 +1,128 @@
 # COMMANDS.md
 
-> Reusable agent commands. Reference these in prompts to trigger structured workflows.
+> Reusable agent commands. Use these names in your prompts to trigger structured workflows.
 
 ---
 
-## `create-feature`
+## Usage with Codex CLI
 
-Implement a feature end-to-end.
+Run commands by describing which command to invoke and what resource or task it should target.
 
-**Steps:**
-1. Read `features/<feature-name>/spec.md` — understand requirements
-2. Read `features/<feature-name>/design.md` — understand technical approach
-3. Execute each step in `features/<feature-name>/tasks.md`
-4. Follow the agent loop in `docs/workflows.md`
-5. Write tests for the new API routes and hooks
-6. Update `docs/database.md` if schema changed
-7. Update `docs/api-contracts.md` with new routes
-8. Commit changes with a descriptive message
+```bash
+codex "Run add-resource for resource: projects"
+codex "Run add-api-route for resource: notifications"
+codex "Run add-form: create project form on dashboard/projects page"
+codex "Run fix-bug: items list shows 404 after delete"
+codex "Run sync-docs"
+```
+
+You can also combine context, for example:
+
+```bash
+codex "In this repo, run add-resource for resource: tasks (CRUD, dashboard page, admin/user access)"
+```
 
 ---
 
-## `add-form`
+## `add-resource`
 
-Add a new form to an existing page or dialog.
+Implement a new domain resource end-to-end (DB + API + hooks + page).
 
 **Steps:**
-1. Create a Zod schema in `src/types/schemas/<name>.ts`
-2. Export the inferred TypeScript type from the schema
-3. Build the React Hook Form component using shadcn `Form`, `FormField`, `FormItem`, `FormMessage`
-4. Connect submission to a TanStack Query `useMutation`
-5. Handle loading, error, and success states
-6. Add server-side validation in the API route using the same schema
+1. Design the resource shape (fields, ownership, roles) based on the user’s description.
+2. Add or update the DB table and RLS policies via migration in `lib/supabase/migrations/` and Supabase MCP, then update `docs/database.md`.
+3. Add Zod schemas and types in `src/types/schemas/<resource>.ts`.
+4. Create API routes under `app/api/<resource>/` (list/create) and `app/api/<resource>/[id]/` (get/update/delete), validating with Zod, using `requireAuth` / `requireRole`, `createServerClient`, and `sendSuccess` / `sendError`, then update `docs/api-contracts.md`.
+5. Create or update hooks in `hooks/use-<resource>.ts` using TanStack Query and `@/lib/api/client` helpers.
+6. Add or extend dashboard UI (page + components) under `app/dashboard/<resource>/` and `components/`, wired to the hooks and respecting RBAC rules from `AGENTS.md`.
 
 ---
 
 ## `add-api-route`
 
-Add a new Next.js API route.
+Add or extend a Next.js API route for an existing resource.
 
 **Steps:**
-1. Create `app/api/<resource>/route.ts`
-2. Validate the request body with the relevant Zod schema from `src/types/schemas/`
-3. Authenticate using `requireAuth()` from `@/lib/auth`
-4. Perform the database operation via `createClient()` from `@/lib/supabase/server.ts`
-5. Return responses with `sendSuccess()` or `sendError()` from `@/lib/utils/api.ts`
-6. Document the route in `docs/api-contracts.md`
+1. Create or update `app/api/<resource>/route.ts` or `app/api/<resource>/[id]/route.ts` for the needed methods.
+2. Validate request bodies with the appropriate Zod schema from `src/types/schemas/`.
+3. Authenticate with `requireAuth()` (and `requireRole()` when needed) from `@/lib/auth`.
+4. Perform DB operations via the Supabase server client from `lib/supabase/server`.
+5. Return responses with `sendSuccess()` / `sendError()` from `lib/utils/api`.
+6. Document any new/changed endpoints in `docs/api-contracts.md`.
 
 ---
 
 ## `add-query-hook`
 
-Add a TanStack Query data-fetching hook.
+Add or extend TanStack Query hooks for a resource.
 
 **Steps:**
-1. Create or update `hooks/use-<resource>.ts`
-2. Use the API helpers (`apiGet`, `apiPost`, etc.) from `@/lib/api/client` for all API calls (no raw fetch)
-3. Define a stable query key (see `docs/state-management.md`)
-4. Implement `useQuery` for reads
-5. Implement `useMutation` with `onSuccess` cache invalidation for writes
-6. Export typed return values
-7. Add optimistic updates if UX requires it
+1. Create or update `hooks/use-<resource>.ts` with a query key map and exported hooks.
+2. Use `apiGet` / `apiPost` / `apiPatch` / `apiDelete` from `@/lib/api/client` for all HTTP calls (no raw `fetch` or new axios instances).
+3. Implement `useQuery` hooks for reads (lists and/or detail) using stable query keys.
+4. Implement `useMutation` hooks with `onSuccess` cache invalidation (and optimistic updates where UX needs it).
+5. Export typed return values based on your domain types.
+
+---
+
+## `add-form`
+
+Add a new form to an existing page or dialog using React Hook Form + Zod + shadcn.
+
+**Steps:**
+1. Create or update a Zod schema and inferred types in `src/types/schemas/<name>.ts`.
+2. Build a React Hook Form-based component using shadcn `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, and `FormMessage`.
+3. Wire submit to an appropriate TanStack Query mutation hook.
+4. Handle loading, error, and success states (e.g. disable submit, show toasts, reset on success).
+5. Ensure the corresponding API route validates with the same Zod schema.
 
 ---
 
 ## `add-db-table`
 
-Add a new Supabase table.
+Add or change a Supabase table and its policies.
 
 **Steps:**
-1. Write the migration SQL in `lib/supabase/migrations/<timestamp>_<name>.sql`
-2. Define columns, constraints, and indexes
-3. Add Row Level Security (RLS) policies
-4. Run the migration via Supabase MCP
-5. Regenerate TypeScript types
-6. Update `docs/database.md`
-
----
-
-## `sync-docs`
-
-Keep documentation in sync with the codebase.
-
-**Steps:**
-1. Scan `app/api/` — compare routes against `docs/api-contracts.md`
-2. Scan `lib/supabase/migrations/` — compare schema against `docs/database.md`
-3. Scan `hooks/` — compare exported hooks against `docs/state-management.md`
-4. Update any outdated sections
-5. Commit documentation updates with message `docs: sync documentation`
-
----
-
-## `plan-feature`
-
-Generate an implementation plan without writing code.
-
-**Steps:**
-1. Read `features/<feature-name>/spec.md`
-2. Output a numbered implementation plan
-3. List all files that will be created or modified
-4. Identify any blockers or open questions
-5. **Do not write code.** Wait for confirmation.
+1. Write a migration in `lib/supabase/migrations/<timestamp>_<name>.sql` defining columns, constraints, and indexes.
+2. Add Row Level Security (RLS) policies for the new/changed table.
+3. Run the migration via the Supabase MCP tools.
+4. Regenerate DB types if needed and align `src/types/database.ts`.
+5. Update `docs/database.md` with the new/changed table and its key columns/policies.
 
 ---
 
 ## `add-page`
 
-Add a new dashboard page with layout.
+Add a new dashboard page with layout and navigation.
 
 **Steps:**
-1. Create `app/dashboard/<page-name>/page.tsx`
-2. Use `DashboardShell` (or existing dashboard layout) and `PageHeader` where applicable
-3. Add the page to sidebar navigation in the dashboard layout; respect role-based visibility (see `docs/auth.md`) if the page is role-restricted
-4. Create any feature-specific components under `features/<feature>/components/` or `components/shared/` as appropriate
+1. Create `app/dashboard/<page-name>/page.tsx` using the dashboard shell and shared layout components (see `AGENTS.md` section 9).
+2. Compose the page from existing or new components under `components/shared/` and/or feature-specific locations.
+3. Add the page to the sidebar or navigation config, respecting RBAC rules described in `AGENTS.md` (only show to allowed roles).
+4. Wire the page to the relevant hooks and forms so it is fully functional.
 
 ---
 
 ## `fix-bug`
 
-Diagnose and fix a reported bug.
+Diagnose and fix a reported bug without breaking adjacent behavior.
 
 **Steps:**
-1. Reproduce the bug — understand the exact failure
-2. Identify the root cause (API, hook, component, schema, or database)
-3. Write a fix
-4. Verify the fix doesn't break adjacent functionality
-5. Commit with message `fix: <short description>`
+1. Reproduce the bug and capture the exact input, path, and error.
+2. Identify the root cause layer (API route, hook, component, schema, database, or config).
+3. Implement a minimal fix aligned with existing patterns (validation, error handling, RBAC).
+4. Re-test the original scenario and nearby flows to ensure no regressions.
+5. Update docs if behavior or contracts changed, and prepare a `fix:` commit message.
+
+---
+
+## `sync-docs`
+
+Bring `docs/api-contracts.md` and `docs/database.md` in sync with the current code and schema.
+
+**Steps:**
+1. Scan `app/api/` for actual routes and compare them to `docs/api-contracts.md`; add or adjust entries as needed.
+2. Scan recent migrations in `lib/supabase/migrations/` and the live schema to confirm `docs/database.md` matches tables and key columns.
+3. Apply doc updates so both files accurately describe the current API and DB.
+4. Summarize changes for a `docs: sync documentation` commit.
+
