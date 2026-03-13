@@ -1,71 +1,26 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { ContentContainer } from "@/components/shared/content-container";
-import { getBrowserSupabaseClient } from "@/lib/supabase";
-import { QUERY_KEYS } from "@/constants/query-keys";
-
-type ProfileData = {
-  user: { email: string | null } | null;
-  profile: { full_name: string | null } | null;
-};
-
-async function fetchCurrentUserWithProfile(): Promise<ProfileData> {
-  const supabase = getBrowserSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { user: null, profile: null };
-  }
-
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .single();
-
-  if (error && error.code !== "PGRST116") {
-    throw new Error(error.message);
-  }
-
-  return {
-    user: { email: user.email ?? null },
-    profile: profile
-      ? { full_name: (profile as { full_name: string | null }).full_name }
-      : { full_name: null },
-  };
-}
+import { ProfileSkeleton } from "@/components/dashboard/profile-skeleton";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: QUERY_KEYS.profile.current,
-    queryFn: fetchCurrentUserWithProfile,
-  });
+  const { data, isLoading, isError, error } = useCurrentUser();
 
   if (isLoading) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Loading profile...
-      </p>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (isError) {
     return (
       <p className="text-sm text-destructive">
-        {(error as Error)?.message ?? "Failed to load profile."}
+        {getErrorMessage(error, "Failed to load profile.")}
       </p>
     );
   }
 
-  if (!data || !data.user) {
+  if (!data?.user) {
     return null;
   }
 

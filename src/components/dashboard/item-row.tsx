@@ -16,20 +16,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Item } from "@/types/database";
-import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { apiPatch, apiDelete } from "@/lib/api/client";
 import { QUERY_KEYS } from "@/constants/query-keys";
+import { getErrorMessage } from "@/lib/utils";
 import { updateItemSchema, type ItemFormValues } from "@/types/schemas";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { ROLES } from "@/constants/roles";
 
 type ItemRowProps = {
   item: Item & { created_by?: string };
   showActions: "own" | "all";
 };
 
-export function ItemRow({ item }: ItemRowProps) {
+export function ItemRow({ item, showActions }: ItemRowProps) {
   const [open, setOpen] = React.useState(false);
-  const supabase = getBrowserSupabaseClient();
   const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentUser();
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(updateItemSchema),
@@ -39,24 +42,17 @@ export function ItemRow({ item }: ItemRowProps) {
     },
   });
 
+  const isAdmin = currentUser?.profile?.role === ROLES.ADMIN;
+  const isOwner =
+    currentUser?.user?.id != null && item.created_by === currentUser.user.id;
+  const canEdit = showActions === "all" ? isAdmin : isOwner;
+
   const { mutateAsync: updateItem, isPending: isUpdating } = useMutation({
     mutationFn: async (values: ItemFormValues) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase
-        .from("items")
-        .update({
-          title: values.title.trim(),
-          description: values.description?.trim() || null,
-        })
-        .eq("id", item.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      await apiPatch<unknown>(`/items/${item.id}`, {
+        title: values.title.trim(),
+        description: values.description?.trim() || null,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.items.all });
@@ -64,23 +60,13 @@ export function ItemRow({ item }: ItemRowProps) {
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to update item.";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Failed to update item."));
     },
   });
 
   const { mutateAsync: deleteItem, isPending: isDeleting } = useMutation({
     mutationFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase.from("items").delete().eq("id", item.id);
-      if (error) {
-        throw new Error(error.message);
-      }
+      await apiDelete(`/items/${item.id}`);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.items.all });
@@ -88,13 +74,9 @@ export function ItemRow({ item }: ItemRowProps) {
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete item.";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Failed to delete item."));
     },
   });
-
-  const canEdit = true;
 
   const onSubmit = async (values: ItemFormValues) => {
     await updateItem(values);
@@ -113,7 +95,7 @@ export function ItemRow({ item }: ItemRowProps) {
       {canEdit && (
         <div className="flex shrink-0 items-center gap-2">
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger>
               <Button variant="outline" size="sm">
                 Edit
               </Button>

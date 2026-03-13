@@ -1,13 +1,6 @@
 import { ItemRow } from "@/components/dashboard/item-row";
 import { CreateItemForm } from "@/components/dashboard/create-item-form";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { EmptyState } from "@/components/common/empty-state";
 import { Package } from "lucide-react";
 import type { Item } from "@/types/database";
 
@@ -28,18 +21,12 @@ export function ItemsList({
     <div className="space-y-4">
       <CreateItemForm />
       {items.length === 0 ? (
-        <Empty className="border border-dashed border-border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Package />
-            </EmptyMedia>
-            <EmptyTitle>{emptyTitle}</EmptyTitle>
-            <EmptyDescription>{emptyDescription}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <CreateItemForm />
-          </EmptyContent>
-        </Empty>
+        <EmptyState
+          icon={Package}
+          title={emptyTitle}
+          description={emptyDescription}
+          action={<CreateItemForm />}
+        />
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border">
           {items.map((item) => (

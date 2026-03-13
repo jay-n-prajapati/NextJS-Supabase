@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Role } from "@/types/database";
+import type { Role } from "@/constants/roles";
 
 export async function getProfile(userId: string) {
   const supabase = await createClient();

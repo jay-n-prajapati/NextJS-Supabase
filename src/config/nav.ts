@@ -1,4 +1,5 @@
 import type { Role } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
 import {
   LayoutDashboard,
   Shield,
@@ -22,25 +23,31 @@ export interface NavItem {
 export const sidebarNav: NavItem[] = [
   {
     label: "Home",
-    href: "/",
+    href: ROUTES.HOME,
     icon: Home,
     roles: ["admin", "user"],
   },
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: ROUTES.DASHBOARD,
     icon: LayoutDashboard,
     roles: ["admin", "user"],
   },
   {
     label: "Table",
-    href: "/dashboard/table",
+    href: ROUTES.DASHBOARD_TABLE,
     icon: Table2,
     roles: ["admin", "user"],
   },
   {
     label: "Admin",
-    href: "/admin",
+    href: ROUTES.ADMIN,
+    icon: Shield,
+    roles: ["admin"],
+  },
+  {
+    label: "Users",
+    href: `${ROUTES.ADMIN}/users`,
     icon: Shield,
     roles: ["admin"],
   },
@@ -49,7 +56,7 @@ export const sidebarNav: NavItem[] = [
 export const sidebarNavFooter: NavItem[] = [
   {
     label: "Profile",
-    href: "/profile",
+    href: ROUTES.PROFILE,
     icon: User,
     roles: ["admin", "user"],
   },

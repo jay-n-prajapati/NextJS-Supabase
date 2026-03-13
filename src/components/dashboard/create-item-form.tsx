@@ -15,13 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { apiPost } from "@/lib/api/client";
 import { QUERY_KEYS } from "@/constants/query-keys";
+import { getErrorMessage } from "@/lib/utils";
 import { createItemSchema, type ItemFormValues } from "@/types/schemas";
 
 export function CreateItemForm() {
   const [open, setOpen] = React.useState(false);
-  const supabase = getBrowserSupabaseClient();
   const queryClient = useQueryClient();
 
   const form = useForm<ItemFormValues>({
@@ -34,22 +34,10 @@ export function CreateItemForm() {
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (values: ItemFormValues) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Not authenticated");
-      }
-
-      const { error } = await supabase.from("items").insert({
+      await apiPost<unknown>("/items", {
         title: values.title.trim(),
         description: values.description?.trim() || null,
-        created_by: user.id,
       });
-
-      if (error) {
-        throw new Error(error.message);
-      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.items.all });
@@ -58,9 +46,7 @@ export function CreateItemForm() {
       setOpen(false);
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to create item.";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Failed to create item."));
     },
   });
 
@@ -70,7 +56,7 @@ export function CreateItemForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button>Add item</Button>
       </DialogTrigger>
       <DialogContent>

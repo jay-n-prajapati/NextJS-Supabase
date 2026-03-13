@@ -21,6 +21,11 @@ const pathSegments: Record<string, BreadcrumbSegment[]> = {
     { label: "Dashboard", href: "/dashboard" },
     { label: "Admin" },
   ],
+  "/admin/users": [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Admin", href: "/admin" },
+    { label: "Users" },
+  ],
   "/profile": [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Profile" },
@@ -38,5 +43,7 @@ export function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   const sorted = Object.keys(pathSegments)
     .filter((p) => p !== "/" && pathname.startsWith(p))
     .sort((a, b) => b.length - a.length);
-  return sorted.length ? pathSegments[sorted[0]] : [{ label: pathname.slice(1) || "Home" }];
+  const key = sorted[0];
+  const segments = key ? pathSegments[key] : undefined;
+  return segments ?? [{ label: pathname.slice(1) || "Home" }];
 }

@@ -10,7 +10,7 @@ import {
 } from "@/config/nav";
 import { Button } from "@/components/ui/button";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
-import type { Role } from "@/types/database";
+import type { Role } from "@/constants/roles";
 
 type AppSidebarProps = {
   userRole: Role;

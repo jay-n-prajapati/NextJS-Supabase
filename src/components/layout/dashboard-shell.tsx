@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
+import { ROUTES } from "@/constants/routes";
 
 type DashboardShellProps = {
   user: User;
@@ -55,7 +56,7 @@ export function DashboardShell({ user, profile, children }: DashboardShellProps)
                 </div>
                 <div className="px-2 py-1 text-muted-foreground text-xs">{user.email}</div>
                 <DropdownMenuItem>
-                  <Link href="/profile" className="block w-full">Profile</Link>
+                  <Link href={ROUTES.PROFILE} className="block w-full">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <button
